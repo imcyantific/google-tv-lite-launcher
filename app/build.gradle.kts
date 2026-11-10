@@ -14,8 +14,23 @@ android {
         applicationId = "com.litelauncher.tv"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"
+        // The release workflow passes these in; the defaults are for local builds.
+        versionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 2
+        versionName = (findProperty("appVersionName") as String?) ?: "1.1"
+    }
+
+    // The release workflow supplies a permanent key through environment variables.
+    // Without them (a normal local build) the debug key is used instead.
+    val releaseKeystore: String? = System.getenv("KEYSTORE_FILE")
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = file(releaseKeystore)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
@@ -23,8 +38,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
-            // Signed with the debug key so it can be sideloaded straight away.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 

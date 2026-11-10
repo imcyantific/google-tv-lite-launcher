@@ -27,6 +27,59 @@ The release build is signed with your debug key so it can be sideloaded.
 Toolchain: Android Gradle Plugin 8.13.2, Gradle 8.14.3, Kotlin 2.3.21, compileSdk 36.
 If Android Studio offers to upgrade these, that is fine but not required.
 
+## Automated releases
+
+`.github/workflows/release.yml` builds a signed APK and publishes it as a GitHub Release.
+
+### One-time setup: signing key
+
+Android only updates an app when the new APK is signed with the same key, so releases need one
+permanent key. Create it once and keep a backup somewhere safe; if it is lost, updates need an uninstall first.
+
+1. Create the key (keytool ships with Android Studio's JDK). Use the same password when asked
+   for the keystore and the key:
+
+```
+keytool -genkeypair -v -keystore lite-launcher.jks -alias lite-launcher -keyalg RSA -keysize 2048 -validity 10000
+```
+
+2. Turn the file into text so it can be stored as a secret.
+
+Windows PowerShell (copies it to the clipboard):
+
+```
+[Convert]::ToBase64String([IO.File]::ReadAllBytes("lite-launcher.jks")) | Set-Clipboard
+```
+
+macOS / Linux:
+
+```
+base64 -w0 lite-launcher.jks      # macOS: base64 -i lite-launcher.jks
+```
+
+3. On GitHub: repository Settings > Secrets and variables > Actions > New repository secret. Add four:
+
+| Secret | Value |
+| --- | --- |
+| `KEYSTORE_BASE64` | the text from step 2 |
+| `KEYSTORE_PASSWORD` | the password you chose |
+| `KEY_ALIAS` | `lite-launcher` |
+| `KEY_PASSWORD` | the same password |
+
+Never commit the `.jks` file; `.gitignore` already excludes it.
+
+### Publishing a version
+
+Either:
+
+- Actions tab > Release > Run workflow, type a version such as `1.2`, run; or
+- push a tag: `git tag v1.2 && git push origin v1.2`
+
+A few minutes later the release appears under Releases with `LiteLauncher-1.2.apk` attached.
+
+The first APK signed with your own key cannot install over an earlier debug-signed build:
+run `adb uninstall com.litelauncher.tv` once, then install. After that, updates install in place.
+
 ## Install on the Streamer
 
 ```
