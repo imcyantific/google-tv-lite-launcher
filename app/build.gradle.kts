@@ -15,8 +15,8 @@ android {
         minSdk = 26
         targetSdk = 35
         // The release workflow passes these in; the defaults are for local builds.
-        versionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 2
-        versionName = (findProperty("appVersionName") as String?) ?: "1.1"
+        versionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 3
+        versionName = (findProperty("appVersionName") as String?) ?: "1.3"
     }
 
     // The release workflow supplies a permanent key through environment variables.

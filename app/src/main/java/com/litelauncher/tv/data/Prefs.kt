@@ -3,6 +3,11 @@ package com.litelauncher.tv.data
 import android.content.Context
 
 const val WALLPAPER_CUSTOM = -1
+const val WALLPAPER_SLIDESHOW = -2
+const val WALLPAPER_VIDEO = -3
+
+const val PREFS_NAME = "launcher"
+const val KEY_TAKE_OVER_HOME = "takeOverHome"
 
 data class LauncherSettings(
     val favourites: List<String> = emptyList(),
@@ -11,6 +16,9 @@ data class LauncherSettings(
     val accent: Int = 0,
     val wallpaper: Int = 0,
     val wallpaperUrl: String = "",
+    val wallpaperPath: String = "",
+    val slideSeconds: Int = 30,
+    val takeOverHome: Boolean = true,
     val tileSize: Int = 1,
     val showLabels: Boolean = true,
     val use24h: Boolean = false,
@@ -23,7 +31,7 @@ data class LauncherSettings(
 }
 
 class Prefs(context: Context) {
-    private val sp = context.getSharedPreferences("launcher", Context.MODE_PRIVATE)
+    private val sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     fun load(): LauncherSettings = LauncherSettings(
         favourites = sp.getString("favourites", "").orEmpty().split('|').filter { it.isNotBlank() },
@@ -32,6 +40,9 @@ class Prefs(context: Context) {
         accent = sp.getInt("accent", 0),
         wallpaper = sp.getInt("wallpaper", 0),
         wallpaperUrl = sp.getString("wallpaperUrl", "").orEmpty(),
+        wallpaperPath = sp.getString("wallpaperPath", "").orEmpty(),
+        slideSeconds = sp.getInt("slideSeconds", 30),
+        takeOverHome = sp.getBoolean(KEY_TAKE_OVER_HOME, true),
         tileSize = sp.getInt("tileSize", 1),
         showLabels = sp.getBoolean("showLabels", true),
         use24h = sp.getBoolean("use24h", false),
@@ -49,6 +60,9 @@ class Prefs(context: Context) {
             .putInt("accent", s.accent)
             .putInt("wallpaper", s.wallpaper)
             .putString("wallpaperUrl", s.wallpaperUrl)
+            .putString("wallpaperPath", s.wallpaperPath)
+            .putInt("slideSeconds", s.slideSeconds)
+            .putBoolean(KEY_TAKE_OVER_HOME, s.takeOverHome)
             .putInt("tileSize", s.tileSize)
             .putBoolean("showLabels", s.showLabels)
             .putBoolean("use24h", s.use24h)

@@ -8,8 +8,9 @@ Built for the Google TV Streamer (4K); should run on any Android TV with Android
 - **Home row** of favourite apps over a wallpaper, with clock, date, optional weather and a Wi-Fi / Ethernet indicator.
 - **All apps** grid (last tile on the home row).
 - **Hold OK on any app** for: add to / remove from home row, move left / right, hide, app info, uninstall.
-- **Settings** (gear, top right): accent colour, wallpaper (6 presets, an image picked through a file manager app, or an image link), tile size,
+- **Settings** (gear, top right): accent colour, wallpaper (6 presets, an image, a slideshow of a folder, a looping muted video, or an image link), slideshow speed, tile size,
   app names on/off, 12/24-hour clock, weather city, °C/°F, hidden apps, shortcut to Android settings.
+- **Built-in file browser** for picking wallpapers with the remote (internal storage and USB drives).
 
 Weather comes from Open-Meteo (no account or key). Nothing else leaves the device.
 
@@ -91,50 +92,45 @@ Open "Lite Launcher" from the apps list and check it works before going further.
 
 ## Make it the home screen
 
-Google TV has no "default launcher" setting, and the remote's Home button stays wired to the
-stock launcher. Two steps get around that without root and without disabling anything:
+Google TV has no "default launcher" setting, so the app includes a helper (an accessibility
+service) that does the job without a PC or root.
 
-1. Set Lite Launcher as the home activity, then check it took:
+On the TV: Launcher settings > Home button helper, turn on "Lite Launcher Home button".
+
+With the helper on, Lite Launcher opens:
+
+- when you press Home on the remote;
+- when the TV starts;
+- whenever the Google TV home screen would appear (after Back out of an app, on wake).
+
+The last one is the "Replace Google TV home" switch in Launcher settings. Turn it off if you
+need to reach the Google TV home screen.
+
+The helper only looks at the Home key and at which app comes to the front. Trade-off: a long
+press of Home no longer opens the Google TV side panel while it is on.
+
+Optional, with ADB from a PC, to also register it as the system home activity:
 
 ```
 adb shell cmd package set-home-activity --user 0 com.litelauncher.tv/.MainActivity
-adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME
 ```
-
-2. Turn on the Home button helper (an accessibility service inside the app that only watches
-   for the Home key). First see whether another service is already enabled:
-
-```
-adb shell settings get secure enabled_accessibility_services
-```
-
-If that prints `null` or nothing:
-
-```
-adb shell settings put secure enabled_accessibility_services com.litelauncher.tv/com.litelauncher.tv.HomeKeyService
-adb shell settings put secure accessibility_enabled 1
-```
-
-If it prints something, keep it and add ours after a colon:
-`<existing>:com.litelauncher.tv/com.litelauncher.tv.HomeKeyService`.
-
-You can also switch the helper on from the TV: Launcher settings > Home button helper.
-
-Trade-off: while the helper is on, a long press of Home no longer opens the Google TV side panel.
 
 ## Undo
 
-```
-adb shell settings put secure enabled_accessibility_services ''
-adb shell settings put secure accessibility_enabled 0
-adb shell cmd package set-home-activity --user 0 com.google.android.apps.tv.launcherx/.MainActivity
-adb uninstall com.litelauncher.tv
-```
+Turn the helper off in the TV's accessibility settings, or uninstall Lite Launcher. Nothing on
+the TV is disabled or removed by this app, so the Google TV home comes straight back.
 
-(If you appended to an existing accessibility list, restore that list instead of clearing it.)
+Do not disable the stock launcher with ADB (`pm disable-user ...launcherx`): if a replacement
+ever fails, the Home button would go nowhere.
 
-Do not disable the stock launcher (`pm disable-user ...launcherx`) unless Lite Launcher already
-answers the Home button reliably. If the stock one is disabled and the replacement fails, Home goes nowhere.
+## Wallpapers from the device
+
+Settings > Wallpaper offers "Image from this device", "Slideshow from a folder" and
+"Video from this device". The first time, Android asks for permission to read photos and videos.
+If a file is missing from the browser, choose "Can't see your files?" to grant all files access.
+
+Video plays muted and looped, and only while the launcher is on screen. MP4 (H.264) is the
+safest format; very large 4K files may stutter.
 
 ## Where to customise the code
 
@@ -143,6 +139,8 @@ answers the Home button reliably. If the stock one is disabled and the replaceme
 | Accent colours, wallpaper presets, tile sizes | `ui/Theme.kt` |
 | Tile look, focus border, dialogs | `ui/Components.kt` |
 | Home layout, clock, weather text | `ui/HomeScreen.kt` |
+| Wallpaper drawing, slideshow, video | `ui/Wallpaper.kt` |
+| File browser | `ui/FileBrowser.kt`, `data/MediaFiles.kt` |
 | Wi-Fi indicator | `ui/NetworkIndicator.kt`, `data/NetworkMonitor.kt` |
 | Settings list | `ui/SettingsScreen.kt` |
 | Which apps are listed, default favourites | `data/AppRepository.kt` |

@@ -1,5 +1,6 @@
 package com.litelauncher.tv.ui
 
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,9 +32,14 @@ import androidx.tv.material3.Text
 import com.litelauncher.tv.LauncherViewModel
 import com.litelauncher.tv.Screen
 import com.litelauncher.tv.data.AppRepository
+import com.litelauncher.tv.data.MediaFiles
 import com.litelauncher.tv.data.WALLPAPER_CUSTOM
+import com.litelauncher.tv.data.WALLPAPER_SLIDESHOW
+import com.litelauncher.tv.data.WALLPAPER_VIDEO
 
 private enum class SettingsDialog { None, Accent, Wallpaper, Hidden }
+
+private val SlideSpeeds = listOf(10 to "10 seconds", 30 to "30 seconds", 60 to "1 minute", 300 to "5 minutes")
 
 @Composable
 fun SettingsScreen(vm: LauncherViewModel, accent: Color) {
@@ -42,18 +48,44 @@ fun SettingsScreen(vm: LauncherViewModel, accent: Color) {
     val firstRow = remember { FocusRequester() }
     var dialog by remember { mutableStateOf(SettingsDialog.None) }
 
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) vm.setWallpaperFromFile(uri)
+    var browse by remember { mutableStateOf<BrowseMode?>(null) }
+    var pendingBrowse by remember { mutableStateOf<BrowseMode?>(null) }
+
+    val permissionRequest = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) {
+        if (MediaFiles.hasAccess(context)) {
+            browse = pendingBrowse
+        } else {
+            Toast.makeText(
+                context,
+                "Allow access to photos and videos to pick wallpapers from this device",
+                Toast.LENGTH_LONG,
+            ).show()
+        }
+        pendingBrowse = null
+    }
+
+    fun openBrowser(mode: BrowseMode) {
+        dialog = SettingsDialog.None
+        if (MediaFiles.hasAccess(context)) {
+            browse = mode
+        } else {
+            pendingBrowse = mode
+            permissionRequest.launch(MediaFiles.requiredPermissions())
+        }
     }
 
     BackHandler { vm.screen = Screen.Home }
     LaunchedEffect(Unit) { firstRow.requestFocusWhenReady() }
 
-    val wallpaperName = if (settings.wallpaper == WALLPAPER_CUSTOM) {
-        "Custom image"
-    } else {
-        WallpaperPresets.getOrElse(settings.wallpaper) { WallpaperPresets.first() }.name
+    val wallpaperName = when (settings.wallpaper) {
+        WALLPAPER_CUSTOM -> "Custom image"
+        WALLPAPER_SLIDESHOW -> "Slideshow (${vm.slideshowFiles.size} images)"
+        WALLPAPER_VIDEO -> "Video"
+        else -> WallpaperPresets.getOrElse(settings.wallpaper) { WallpaperPresets.first() }.name
     }
+    val speedIndex = SlideSpeeds.indexOfFirst { it.first == settings.slideSeconds }.coerceAtLeast(0)
 
     val rows = listOf(
         MenuOption("Android settings", "Network, display, accounts") {
@@ -63,6 +95,10 @@ fun SettingsScreen(vm: LauncherViewModel, accent: Color) {
             dialog = SettingsDialog.Accent
         },
         MenuOption("Wallpaper", wallpaperName) { dialog = SettingsDialog.Wallpaper },
+        MenuOption("Slideshow speed", SlideSpeeds[speedIndex].second) {
+            val next = SlideSpeeds[(speedIndex + 1) % SlideSpeeds.size].first
+            vm.update { it.copy(slideSeconds = next) }
+        },
         MenuOption("Tile size", TileSizeNames.getOrElse(settings.tileSize) { TileSizeNames[1] }) {
             vm.update { it.copy(tileSize = (it.tileSize + 1) % TileSizeNames.size) }
         },
@@ -88,6 +124,9 @@ fun SettingsScreen(vm: LauncherViewModel, accent: Color) {
             if (!AppRepository.openAccessibilitySettings(context)) {
                 Toast.makeText(context, "Open Settings > System > Accessibility", Toast.LENGTH_LONG).show()
             }
+        },
+        MenuOption("Replace Google TV home", if (settings.takeOverHome) "On (needs helper)" else "Off") {
+            vm.update { it.copy(takeOverHome = !it.takeOverHome) }
         },
     )
 
@@ -134,19 +173,24 @@ fun SettingsScreen(vm: LauncherViewModel, accent: Color) {
         SettingsDialog.Wallpaper -> MenuDialog(
             title = "Wallpaper",
             accent = accent,
-            initialIndex = if (settings.wallpaper == WALLPAPER_CUSTOM) WallpaperPresets.size else settings.wallpaper,
+            initialIndex = when (settings.wallpaper) {
+                WALLPAPER_CUSTOM -> WallpaperPresets.size
+                WALLPAPER_SLIDESHOW -> WallpaperPresets.size + 1
+                WALLPAPER_VIDEO -> WallpaperPresets.size + 2
+                else -> settings.wallpaper
+            },
             onDismiss = { dialog = SettingsDialog.None },
             options = WallpaperPresets.mapIndexed { index, item ->
                 MenuOption(item.name) {
                     vm.setWallpaperPreset(index)
                     dialog = SettingsDialog.None
                 }
-            } + MenuOption("Choose image from files…") {
-                dialog = SettingsDialog.None
-                val opened = runCatching { imagePicker.launch("image/*") }.isSuccess
-                if (!opened) {
-                    Toast.makeText(context, "No file manager app offered to pick an image", Toast.LENGTH_LONG).show()
-                }
+            } + MenuOption("Image from this device…") {
+                openBrowser(BrowseMode.Image)
+            } + MenuOption("Slideshow from a folder…") {
+                openBrowser(BrowseMode.Folder)
+            } + MenuOption("Video from this device…") {
+                openBrowser(BrowseMode.Video)
             } + MenuOption("Image from a link…") {
                 dialog = SettingsDialog.None
                 promptText(
@@ -167,6 +211,22 @@ fun SettingsScreen(vm: LauncherViewModel, accent: Color) {
             options = vm.hiddenApps.map { app ->
                 MenuOption(app.label, "Show again") { vm.setHidden(app.packageName, false) }
             },
+        )
+    }
+
+    browse?.let { mode ->
+        FileBrowserDialog(
+            mode = mode,
+            accent = accent,
+            onPickFile = { file ->
+                browse = null
+                if (mode == BrowseMode.Video) vm.setVideoWallpaper(file) else vm.setWallpaperFromFile(Uri.fromFile(file))
+            },
+            onPickFolder = { folder ->
+                browse = null
+                vm.setSlideshowFolder(folder)
+            },
+            onDismiss = { browse = null },
         )
     }
 }

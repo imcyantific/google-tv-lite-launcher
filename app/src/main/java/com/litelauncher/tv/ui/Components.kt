@@ -30,6 +30,14 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.NativeKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -59,6 +67,57 @@ suspend fun FocusRequester.requestFocusWhenReady() {
     }
 }
 
+private fun isOkKey(event: KeyEvent): Boolean = when (event.nativeKeyEvent.keyCode) {
+    NativeKeyEvent.KEYCODE_DPAD_CENTER, NativeKeyEvent.KEYCODE_ENTER, NativeKeyEvent.KEYCODE_NUMPAD_ENTER -> true
+    else -> false
+}
+
+/**
+ * Holding OK fires [onLongClick] once. The rest of that press is swallowed so the tile
+ * doesn't also count it as a normal click.
+ */
+fun Modifier.onLongOk(onLongClick: () -> Unit): Modifier = composed {
+    var fired by remember { mutableStateOf(false) }
+    onPreviewKeyEvent { event ->
+        if (!isOkKey(event)) return@onPreviewKeyEvent false
+        val native = event.nativeKeyEvent
+        when (native.action) {
+            NativeKeyEvent.ACTION_DOWN -> {
+                if (native.repeatCount == 0) {
+                    fired = false
+                    false
+                } else {
+                    if (!fired) {
+                        fired = true
+                        onLongClick()
+                    }
+                    true
+                }
+            }
+            NativeKeyEvent.ACTION_UP -> {
+                val wasLong = fired
+                fired = false
+                wasLong
+            }
+            else -> false
+        }
+    }
+}
+
+/**
+ * For dialogs: ignores OK until it is pressed fresh inside the dialog. Without this, letting
+ * go of the long press that opened a menu would "click" the first row.
+ */
+fun Modifier.ignoreHeldOk(): Modifier = composed {
+    var armed by remember { mutableStateOf(false) }
+    onPreviewKeyEvent { event ->
+        if (!isOkKey(event)) return@onPreviewKeyEvent false
+        val native = event.nativeKeyEvent
+        if (native.action == NativeKeyEvent.ACTION_DOWN && native.repeatCount == 0) armed = true
+        !armed
+    }
+}
+
 @Composable
 fun TileSurface(
     accent: Color,
@@ -69,8 +128,7 @@ fun TileSurface(
 ) {
     Surface(
         onClick = onClick,
-        onLongClick = onLongClick,
-        modifier = modifier,
+        modifier = if (onLongClick != null) modifier.onLongOk(onLongClick) else modifier,
         shape = ClickableSurfaceDefaults.shape(TileShape),
         colors = ClickableSurfaceDefaults.colors(
             containerColor = TileColor,
@@ -252,10 +310,13 @@ fun MenuDialog(
     onDismiss: () -> Unit,
     emptyText: String = "",
     initialIndex: Int = 0,
+    subtitle: String? = null,
+    focusKey: Any? = null,
 ) {
     val firstFocus = remember { FocusRequester() }
     val focusIndex = initialIndex.coerceIn(0, (options.size - 1).coerceAtLeast(0))
-    LaunchedEffect(options.isEmpty()) {
+    // focusKey changes when the list is replaced (e.g. another folder), which re-focuses the top row.
+    LaunchedEffect(focusKey, options.isEmpty()) {
         if (options.isNotEmpty()) firstFocus.requestFocusWhenReady()
     }
 
@@ -264,7 +325,8 @@ fun MenuDialog(
             modifier = Modifier
                 .width(400.dp)
                 .background(PanelColor, RoundedCornerShape(18.dp))
-                .padding(18.dp),
+                .padding(18.dp)
+                .ignoreHeldOk(),
         ) {
             Text(
                 text = title,
@@ -273,8 +335,19 @@ fun MenuDialog(
                 color = Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(start = 16.dp, bottom = 12.dp, top = 4.dp),
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
             )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    fontSize = 13.sp,
+                    color = Color.White.copy(alpha = 0.6f),
+                    maxLines = 1,
+                    overflow = TextOverflow.StartEllipsis,
+                    modifier = Modifier.padding(start = 16.dp, top = 2.dp),
+                )
+            }
+            Spacer(Modifier.size(12.dp))
             if (options.isEmpty()) {
                 Text(
                     text = emptyText,
@@ -283,18 +356,20 @@ fun MenuDialog(
                     modifier = Modifier.padding(16.dp),
                 )
             }
-            LazyColumn(
-                modifier = Modifier.heightIn(max = 380.dp),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                itemsIndexed(options) { index, option ->
-                    OptionRow(
-                        title = option.title,
-                        value = option.value,
-                        accent = accent,
-                        onClick = option.onClick,
-                        modifier = if (index == focusIndex) Modifier.focusRequester(firstFocus) else Modifier,
-                    )
+            key(focusKey) {
+                LazyColumn(
+                    modifier = Modifier.heightIn(max = 360.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    itemsIndexed(options) { index, option ->
+                        OptionRow(
+                            title = option.title,
+                            value = option.value,
+                            accent = accent,
+                            onClick = option.onClick,
+                            modifier = if (index == focusIndex) Modifier.focusRequester(firstFocus) else Modifier,
+                        )
+                    }
                 }
             }
         }

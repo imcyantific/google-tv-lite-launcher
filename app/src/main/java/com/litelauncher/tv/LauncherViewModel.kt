@@ -15,10 +15,13 @@ import androidx.lifecycle.viewModelScope
 import com.litelauncher.tv.data.AppEntry
 import com.litelauncher.tv.data.AppRepository
 import com.litelauncher.tv.data.LauncherSettings
+import com.litelauncher.tv.data.MediaFiles
 import com.litelauncher.tv.data.NetworkMonitor
 import com.litelauncher.tv.data.NetworkStatus
 import com.litelauncher.tv.data.Prefs
 import com.litelauncher.tv.data.WALLPAPER_CUSTOM
+import com.litelauncher.tv.data.WALLPAPER_SLIDESHOW
+import com.litelauncher.tv.data.WALLPAPER_VIDEO
 import com.litelauncher.tv.data.Wallpapers
 import com.litelauncher.tv.data.Weather
 import com.litelauncher.tv.data.WeatherNow
@@ -39,6 +42,9 @@ class LauncherViewModel(app: Application) : AndroidViewModel(app) {
 
     var screen by mutableStateOf(Screen.Home)
     var resumeCount by mutableIntStateOf(0)
+
+    /** True while the launcher is on screen; slideshow and video only run then. */
+    var active by mutableStateOf(false)
     var settings by mutableStateOf(prefs.load())
         private set
     var apps by mutableStateOf<List<AppEntry>>(emptyList())
@@ -46,6 +52,8 @@ class LauncherViewModel(app: Application) : AndroidViewModel(app) {
     var weather by mutableStateOf<WeatherNow?>(null)
         private set
     var wallpaperImage by mutableStateOf<ImageBitmap?>(null)
+        private set
+    var slideshowFiles by mutableStateOf<List<File>>(emptyList())
         private set
     var network by mutableStateOf(NetworkStatus())
         private set
@@ -70,6 +78,7 @@ class LauncherViewModel(app: Application) : AndroidViewModel(app) {
         networkMonitor.start()
         refreshApps()
         if (settings.wallpaper == WALLPAPER_CUSTOM) loadWallpaperFile()
+        if (settings.wallpaper == WALLPAPER_SLIDESHOW) loadSlideshow()
     }
 
     fun update(change: (LauncherSettings) -> LauncherSettings) {
@@ -182,6 +191,26 @@ class LauncherViewModel(app: Application) : AndroidViewModel(app) {
             } else {
                 toast("Couldn't use that file. Pick a JPG or PNG image.")
             }
+        }
+    }
+
+    fun setSlideshowFolder(folder: File) {
+        update { it.copy(wallpaper = WALLPAPER_SLIDESHOW, wallpaperPath = folder.path) }
+        loadSlideshow()
+    }
+
+    fun setVideoWallpaper(file: File) {
+        update { it.copy(wallpaper = WALLPAPER_VIDEO, wallpaperPath = file.path) }
+    }
+
+    fun onVideoError() {
+        toast("Couldn't play that video. MP4 (H.264) works best.")
+    }
+
+    private fun loadSlideshow() {
+        val folder = File(settings.wallpaperPath)
+        viewModelScope.launch {
+            slideshowFiles = withContext(Dispatchers.IO) { MediaFiles.imagesIn(folder) }
         }
     }
 

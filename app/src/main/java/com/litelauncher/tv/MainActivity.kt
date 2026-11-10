@@ -34,6 +34,16 @@ class MainActivity : ComponentActivity() {
         ContextCompat.registerReceiver(this, packageReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
+    override fun onStart() {
+        super.onStart()
+        viewModel.active = true
+    }
+
+    override fun onStop() {
+        viewModel.active = false
+        super.onStop()
+    }
+
     override fun onResume() {
         super.onResume()
         viewModel.resumeCount++
