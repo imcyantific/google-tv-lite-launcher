@@ -15,8 +15,13 @@ android {
         minSdk = 26
         targetSdk = 35
         // The release workflow passes these in; the defaults are for local builds.
-        versionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 4
-        versionName = (findProperty("appVersionName") as String?) ?: "1.4"
+        versionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 5
+        versionName = (findProperty("appVersionName") as String?) ?: "1.5"
+
+        // Where "Check for updates" looks. The token is only needed while the repository
+        // is private; it is empty unless the release workflow supplies one.
+        buildConfigField("String", "UPDATE_REPO", "\"imcyantific/google-tv-lite-launcher\"")
+        buildConfigField("String", "UPDATE_TOKEN", "\"${System.getenv("UPDATE_TOKEN") ?: ""}\"")
     }
 
     // The release workflow supplies a permanent key through environment variables.
@@ -49,6 +54,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

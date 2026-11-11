@@ -60,6 +60,8 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          # Optional: read-only token for in-app updates while the repo is private.
+          UPDATE_TOKEN: ${{ secrets.UPDATE_TOKEN }}
         run: |
           chmod +x gradlew
           ./gradlew assembleRelease \

@@ -19,6 +19,9 @@ import com.litelauncher.tv.data.MediaFiles
 import com.litelauncher.tv.data.NetworkMonitor
 import com.litelauncher.tv.data.NetworkStatus
 import com.litelauncher.tv.data.Prefs
+import com.litelauncher.tv.data.UpdateException
+import com.litelauncher.tv.data.UpdateInfo
+import com.litelauncher.tv.data.Updater
 import com.litelauncher.tv.data.WALLPAPER_CUSTOM
 import com.litelauncher.tv.data.WALLPAPER_SLIDESHOW
 import com.litelauncher.tv.data.WALLPAPER_VIDEO
@@ -61,6 +64,12 @@ class LauncherViewModel(app: Application) : AndroidViewModel(app) {
         private set
     var slideshowFiles by mutableStateOf<List<File>>(emptyList())
         private set
+    /** Set when "Check for updates" finds a newer release; the settings screen shows a prompt. */
+    var availableUpdate by mutableStateOf<UpdateInfo?>(null)
+    var updateBusy by mutableStateOf(false)
+        private set
+    val appVersion: String = Updater.currentVersion(app)
+
     var network by mutableStateOf(NetworkStatus())
         private set
 
@@ -231,6 +240,41 @@ class LauncherViewModel(app: Application) : AndroidViewModel(app) {
             wallpaperImage = withContext(Dispatchers.IO) { Wallpapers.decode(wallpaperFile)?.asImageBitmap() }
         }
     }
+
+    fun checkForUpdate() {
+        if (updateBusy) return
+        updateBusy = true
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) { runCatching { Updater.latest() } }
+            updateBusy = false
+            val latest = result.getOrNull()
+            when {
+                latest == null -> toast(updateError(result.exceptionOrNull()))
+                Updater.isNewer(latest.version, appVersion) -> availableUpdate = latest
+                else -> toast("You're on the latest version ($appVersion)")
+            }
+        }
+    }
+
+    fun installUpdate(info: UpdateInfo) {
+        if (updateBusy) return
+        availableUpdate = null
+        updateBusy = true
+        toast("Downloading version ${info.version}…")
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) { runCatching { Updater.download(info, getApplication()) } }
+            updateBusy = false
+            val apk = result.getOrNull()
+            if (apk == null) {
+                toast(updateError(result.exceptionOrNull()))
+            } else if (runCatching { Updater.install(getApplication(), apk) }.isFailure) {
+                toast("Couldn't open the installer")
+            }
+        }
+    }
+
+    private fun updateError(error: Throwable?): String =
+        if (error is UpdateException) error.message.orEmpty() else "Couldn't check for updates. Is the TV online?"
 
     override fun onCleared() {
         networkMonitor.stop()

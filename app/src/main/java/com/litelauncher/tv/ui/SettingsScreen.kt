@@ -126,6 +126,9 @@ fun SettingsScreen(vm: LauncherViewModel, accent: Color) {
         MenuOption("Replace Google TV home", if (settings.takeOverHome) "On (needs helper)" else "Off") {
             vm.update { it.copy(takeOverHome = !it.takeOverHome) }
         },
+        MenuOption("Check for updates", if (vm.updateBusy) "Working…" else "Version ${vm.appVersion}") {
+            vm.checkForUpdate()
+        },
     )
 
     Column(
@@ -227,6 +230,19 @@ fun SettingsScreen(vm: LauncherViewModel, accent: Color) {
             options = vm.hiddenApps.map { app ->
                 MenuOption(app.label, "Show again") { vm.setHidden(app.packageName, false) }
             },
+        )
+    }
+
+    vm.availableUpdate?.let { info ->
+        MenuDialog(
+            title = "Version ${info.version} is available",
+            subtitle = "You have ${vm.appVersion}",
+            accent = accent,
+            onDismiss = { vm.availableUpdate = null },
+            options = listOf(
+                MenuOption("Download and install") { vm.installUpdate(info) },
+                MenuOption("Not now") { vm.availableUpdate = null },
+            ),
         )
     }
 

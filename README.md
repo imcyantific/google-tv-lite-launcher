@@ -82,6 +82,23 @@ A few minutes later the release appears under Releases with `LiteLauncher-1.2.ap
 The first APK signed with your own key cannot install over an earlier debug-signed build:
 run `adb uninstall com.litelauncher.tv` once, then install. After that, updates install in place.
 
+## In-app updates
+
+Launcher settings > Check for updates looks at this repository's latest GitHub Release. If it is
+newer than the installed version, it downloads the APK and opens Android's installer, which asks
+you to confirm. The first time, Android also asks you to allow Lite Launcher to install apps.
+
+This works out of the box when the repository is **public**. While it is **private**, GitHub
+refuses anonymous requests, so the app needs a read-only token built in:
+
+1. GitHub > Settings > Developer settings > Fine-grained tokens > Generate new token.
+   Repository access: only this repository. Permissions: Contents, read-only.
+2. Add it to this repository as an Actions secret named `UPDATE_TOKEN`.
+3. Publish a new release; that build and later ones can update themselves.
+
+The token ends up inside the APK, so only do this while the APK stays with you, and note that
+updates stop working when the token expires.
+
 ## Install on the Streamer
 
 ```
