@@ -43,6 +43,12 @@ class LauncherViewModel(app: Application) : AndroidViewModel(app) {
     var screen by mutableStateOf(Screen.Home)
     var resumeCount by mutableIntStateOf(0)
 
+    /** Bumped when Home is pressed; the home row jumps back to the first app. */
+    var homeResetCount by mutableIntStateOf(0)
+
+    var appsLoaded by mutableStateOf(false)
+        private set
+
     /** True while the launcher is on screen; slideshow and video only run then. */
     var active by mutableStateOf(false)
     var settings by mutableStateOf(prefs.load())
@@ -91,6 +97,7 @@ class LauncherViewModel(app: Application) : AndroidViewModel(app) {
         loadJob = viewModelScope.launch {
             val loaded = withContext(Dispatchers.IO) { AppRepository.load(getApplication()) }
             apps = loaded
+            appsLoaded = true
             if (!settings.seeded && loaded.isNotEmpty()) {
                 update { it.copy(favourites = AppRepository.defaultFavourites(loaded), seeded = true) }
             }

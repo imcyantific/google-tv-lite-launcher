@@ -28,8 +28,25 @@ val WallpaperPresets = listOf(
     WallpaperPreset("Black", listOf(Color.Black, Color.Black)),
 )
 
-val TileSizeNames = listOf("Small", "Medium", "Large")
-val TileWidths: List<Dp> = listOf(150.dp, 190.dp, 230.dp)
+// Tile widths in dp. Height always follows at 16:9.
+val TilePresets = listOf(
+    "Extra small" to 110,
+    "Small" to 150,
+    "Medium" to 190,
+    "Large" to 230,
+    "Extra large" to 270,
+)
+const val TileWidthMin = 90
+const val TileWidthMax = 320
+const val TileWidthStep = 10
+
+fun tileSizeName(width: Int): String =
+    TilePresets.firstOrNull { it.second == width }?.first ?: "Custom ($width)"
+
+val TileSpacing: Dp = 16.dp
+
+/** Room inside the row's edges so the focused tile's zoom and border aren't clipped. */
+val RowBleed: Dp = 14.dp
 
 val TileColor = Color(0xFF1C2027)
 val PanelColor = Color(0xFF171A20)

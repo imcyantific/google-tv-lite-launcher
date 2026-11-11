@@ -53,7 +53,10 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         // Pressing Home while in All apps or Settings returns to the main row.
-        if (intent.hasCategory(Intent.CATEGORY_HOME)) viewModel.screen = Screen.Home
+        if (intent.hasCategory(Intent.CATEGORY_HOME)) {
+            viewModel.screen = Screen.Home
+            viewModel.homeResetCount++
+        }
     }
 
     override fun onDestroy() {

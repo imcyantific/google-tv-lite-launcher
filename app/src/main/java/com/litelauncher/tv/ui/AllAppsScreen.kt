@@ -34,7 +34,7 @@ import com.litelauncher.tv.data.AppRepository
 fun AllAppsScreen(vm: LauncherViewModel, accent: Color) {
     val context = LocalContext.current
     val apps = vm.visibleApps
-    val tileWidth = TileWidths.getOrElse(vm.settings.tileSize) { TileWidths[1] }
+    val tileWidth = vm.settings.tileWidth.dp
     val firstTile = remember { FocusRequester() }
     var menuApp by remember { mutableStateOf<AppEntry?>(null) }
 
@@ -65,7 +65,7 @@ fun AllAppsScreen(vm: LauncherViewModel, accent: Color) {
             columns = GridCells.Adaptive(tileWidth),
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = ScreenPadding, vertical = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(TileSpacing),
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             itemsIndexed(apps, key = { _, app -> app.packageName }) { index, app ->

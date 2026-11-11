@@ -19,7 +19,7 @@ data class LauncherSettings(
     val wallpaperPath: String = "",
     val slideSeconds: Int = 30,
     val takeOverHome: Boolean = true,
-    val tileSize: Int = 1,
+    val tileWidth: Int = 190,
     val showLabels: Boolean = true,
     val use24h: Boolean = false,
     val city: String = "",
@@ -43,7 +43,8 @@ class Prefs(context: Context) {
         wallpaperPath = sp.getString("wallpaperPath", "").orEmpty(),
         slideSeconds = sp.getInt("slideSeconds", 30),
         takeOverHome = sp.getBoolean(KEY_TAKE_OVER_HOME, true),
-        tileSize = sp.getInt("tileSize", 1),
+        // Older versions stored a size index (0-2); convert it once.
+        tileWidth = sp.getInt("tileWidth", listOf(150, 190, 230).getOrElse(sp.getInt("tileSize", 1)) { 190 }),
         showLabels = sp.getBoolean("showLabels", true),
         use24h = sp.getBoolean("use24h", false),
         city = sp.getString("city", "").orEmpty(),
@@ -63,7 +64,7 @@ class Prefs(context: Context) {
             .putString("wallpaperPath", s.wallpaperPath)
             .putInt("slideSeconds", s.slideSeconds)
             .putBoolean(KEY_TAKE_OVER_HOME, s.takeOverHome)
-            .putInt("tileSize", s.tileSize)
+            .putInt("tileWidth", s.tileWidth)
             .putBoolean("showLabels", s.showLabels)
             .putBoolean("use24h", s.use24h)
             .putString("city", s.city)

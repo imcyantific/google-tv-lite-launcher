@@ -37,7 +37,7 @@ import com.litelauncher.tv.data.WALLPAPER_CUSTOM
 import com.litelauncher.tv.data.WALLPAPER_SLIDESHOW
 import com.litelauncher.tv.data.WALLPAPER_VIDEO
 
-private enum class SettingsDialog { None, Accent, Wallpaper, Hidden }
+private enum class SettingsDialog { None, Accent, Wallpaper, TileSize, Hidden }
 
 private val SlideSpeeds = listOf(10 to "10 seconds", 30 to "30 seconds", 60 to "1 minute", 300 to "5 minutes")
 
@@ -99,9 +99,7 @@ fun SettingsScreen(vm: LauncherViewModel, accent: Color) {
             val next = SlideSpeeds[(speedIndex + 1) % SlideSpeeds.size].first
             vm.update { it.copy(slideSeconds = next) }
         },
-        MenuOption("Tile size", TileSizeNames.getOrElse(settings.tileSize) { TileSizeNames[1] }) {
-            vm.update { it.copy(tileSize = (it.tileSize + 1) % TileSizeNames.size) }
-        },
+        MenuOption("Tile size", tileSizeName(settings.tileWidth)) { dialog = SettingsDialog.TileSize },
         MenuOption("App names under tiles", if (settings.showLabels) "On" else "Off") {
             vm.update { it.copy(showLabels = !it.showLabels) }
         },
@@ -200,6 +198,24 @@ fun SettingsScreen(vm: LauncherViewModel, accent: Color) {
                     hint = "https://… (direct link to a JPG or PNG)",
                     isUrl = true,
                 ) { vm.setWallpaperFromUrl(it) }
+            },
+        )
+
+        SettingsDialog.TileSize -> MenuDialog(
+            title = "Tile size",
+            subtitle = "Now: ${tileSizeName(settings.tileWidth)}, ${settings.tileWidth} wide",
+            accent = accent,
+            initialIndex = TilePresets.indexOfFirst { it.second == settings.tileWidth }.coerceAtLeast(0),
+            onDismiss = { dialog = SettingsDialog.None },
+            options = TilePresets.map { (name, width) ->
+                MenuOption(name, width.toString()) {
+                    vm.update { it.copy(tileWidth = width) }
+                    dialog = SettingsDialog.None
+                }
+            } + MenuOption("A little smaller", "-$TileWidthStep") {
+                vm.update { it.copy(tileWidth = (it.tileWidth - TileWidthStep).coerceAtLeast(TileWidthMin)) }
+            } + MenuOption("A little bigger", "+$TileWidthStep") {
+                vm.update { it.copy(tileWidth = (it.tileWidth + TileWidthStep).coerceAtMost(TileWidthMax)) }
             },
         )
 

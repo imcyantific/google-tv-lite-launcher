@@ -174,25 +174,30 @@ fun AppTile(
                     modifier = Modifier.fillMaxSize(),
                 )
             } else {
+                // Apps without a TV banner: icon plus name, or just the icon on small tiles.
+                val compact = width < 140.dp
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 14.dp),
+                        .padding(horizontal = if (compact) 6.dp else 14.dp),
+                    horizontalArrangement = if (compact) Arrangement.Center else Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Image(
                         bitmap = app.image,
-                        contentDescription = null,
-                        modifier = Modifier.size(width * 0.24f),
+                        contentDescription = if (compact) app.label else null,
+                        modifier = Modifier.size(width * if (compact) 0.34f else 0.24f),
                     )
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        text = app.label,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    if (!compact) {
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = app.label,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
             if (marked) {
@@ -205,7 +210,7 @@ fun AppTile(
                 )
             }
         }
-        if (showLabel && app.isBanner) {
+        if (showLabel && (app.isBanner || width < 140.dp)) {
             Text(
                 text = app.label,
                 fontSize = 13.sp,
@@ -245,8 +250,13 @@ fun AllAppsTile(width: Dp, accent: Color, onClick: () -> Unit, modifier: Modifie
                     }
                 }
             }
-            Spacer(Modifier.width(12.dp))
-            Text(text = "All apps", fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.width(if (width < 140.dp) 8.dp else 12.dp))
+            Text(
+                text = "All apps",
+                fontSize = if (width < 140.dp) 12.sp else 15.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+            )
         }
     }
 }

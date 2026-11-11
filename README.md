@@ -6,9 +6,10 @@ Built for the Google TV Streamer (4K); should run on any Android TV with Android
 ## What it does
 
 - **Home row** of favourite apps over a wallpaper, with clock, date, optional weather and a Wi-Fi / Ethernet indicator.
+- The home row is centred and scrolls in whole tiles, so no half tile shows at the screen edges.
 - **All apps** grid (last tile on the home row).
 - **Hold OK on any app** for: add to / remove from home row, move left / right, hide, app info, uninstall.
-- **Settings** (gear, top right): accent colour, wallpaper (6 presets, an image, a slideshow of a folder, a looping muted video, or an image link), slideshow speed, tile size,
+- **Settings** (gear, top right): accent colour, wallpaper (6 presets, an image, a slideshow of a folder, a looping muted video, or an image link), slideshow speed, tile size (five presets from extra small to extra large, plus fine adjustment),
   app names on/off, 12/24-hour clock, weather city, °C/°F, hidden apps, shortcut to Android settings.
 - **Built-in file browser** for picking wallpapers with the remote (internal storage and USB drives).
 
