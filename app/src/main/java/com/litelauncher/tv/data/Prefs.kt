@@ -18,6 +18,7 @@ data class LauncherSettings(
     val wallpaperUrl: String = "",
     val wallpaperPath: String = "",
     val slideSeconds: Int = 30,
+    val idleHideSeconds: Int = 0,
     val takeOverHome: Boolean = true,
     val tileWidth: Int = 190,
     val showLabels: Boolean = true,
@@ -42,6 +43,7 @@ class Prefs(context: Context) {
         wallpaperUrl = sp.getString("wallpaperUrl", "").orEmpty(),
         wallpaperPath = sp.getString("wallpaperPath", "").orEmpty(),
         slideSeconds = sp.getInt("slideSeconds", 30),
+        idleHideSeconds = sp.getInt("idleHideSeconds", 0),
         takeOverHome = sp.getBoolean(KEY_TAKE_OVER_HOME, true),
         // Older versions stored a size index (0-2); convert it once.
         tileWidth = sp.getInt("tileWidth", listOf(150, 190, 230).getOrElse(sp.getInt("tileSize", 1)) { 190 }),
@@ -63,6 +65,7 @@ class Prefs(context: Context) {
             .putString("wallpaperUrl", s.wallpaperUrl)
             .putString("wallpaperPath", s.wallpaperPath)
             .putInt("slideSeconds", s.slideSeconds)
+            .putInt("idleHideSeconds", s.idleHideSeconds)
             .putBoolean(KEY_TAKE_OVER_HOME, s.takeOverHome)
             .putInt("tileWidth", s.tileWidth)
             .putBoolean("showLabels", s.showLabels)

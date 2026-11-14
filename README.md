@@ -150,6 +150,16 @@ If a file is missing from the browser, choose "Can't see your files?" to grant a
 Video plays muted and looped, and only while the launcher is on screen. MP4 (H.264) is the
 safest format; very large 4K files may stutter.
 
+## Wallpaper-only mode
+
+Launcher settings > "Wallpaper only when idle" (off, 30 seconds, 1, 5 or 10 minutes). After that
+long without a button press on the home screen, the clock, apps and icons fade out and only the
+wallpaper, slideshow or video stays. Any button brings everything back.
+
+While the option is on, the launcher keeps the screen awake whenever it is in front, so the TV's
+own screensaver and sleep timer do not start. Inside other apps nothing changes. On an OLED
+screen, prefer a slideshow or video over one still image to avoid burn-in.
+
 ## Where to customise the code
 
 | What | File |
