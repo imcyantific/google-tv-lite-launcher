@@ -38,6 +38,20 @@ class StartupSmokeTest {
     }
 
     @Test
+    fun crashReportScreenShowsThenContinues() {
+        val app = org.robolectric.RuntimeEnvironment.getApplication()
+        java.io.File(app.filesDir, "last_crash.txt").writeText("Lite Launcher test\njava.lang.IllegalStateException: boom\n\tat a.b(c.kt:1)")
+        val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
+        settle()
+        val activity = controller.get()
+        check(!java.io.File(app.filesDir, "last_crash.txt").exists()) { "crash report should be cleared once shown" }
+        activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DPAD_CENTER))
+        activity.dispatchKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_DPAD_CENTER))
+        settle()
+        controller.pause().stop().destroy()
+    }
+
+    @Test
     fun helperServiceStarts() {
         val controller = Robolectric.buildService(HomeKeyService::class.java).create()
         val service = controller.get()

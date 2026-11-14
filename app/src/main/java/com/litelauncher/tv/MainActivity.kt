@@ -4,7 +4,11 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Bundle
+import android.view.KeyEvent
+import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -23,7 +27,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent { LauncherApp(viewModel) }
+
+        // If the app crashed last time, show why before starting the normal screen.
+        // This also stops a crash from repeating in a loop.
+        val crash = CrashLog.take(this)
+        if (crash != null) showCrashReport(crash) else setContent { LauncherApp(viewModel) }
 
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_PACKAGE_ADDED)
@@ -32,6 +40,36 @@ class MainActivity : ComponentActivity() {
             addDataScheme("package")
         }
         ContextCompat.registerReceiver(this, packageReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+    }
+
+    private var showingCrash = false
+
+    /** Plain Android views on purpose: this must work even if the normal screen can't. */
+    private fun showCrashReport(report: String) {
+        showingCrash = true
+        val lines = report.lines()
+        val shown = lines.take(26).joinToString("\n") + if (lines.size > 26) "\n…" else ""
+        val text = TextView(this).apply {
+            text = "Lite Launcher closed unexpectedly last time.\n" +
+                "Please take a photo of this screen, then press any button to continue.\n\n" + shown
+            setTextColor(Color.WHITE)
+            textSize = 11f
+            typeface = Typeface.MONOSPACE
+            setPadding(48, 32, 48, 32)
+            setBackgroundColor(Color.BLACK)
+        }
+        setContentView(text)
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (showingCrash) {
+            if (event.action == KeyEvent.ACTION_UP) {
+                showingCrash = false
+                setContent { LauncherApp(viewModel) }
+            }
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onStart() {
