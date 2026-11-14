@@ -85,8 +85,8 @@ run `adb uninstall com.litelauncher.tv` once, then install. After that, updates 
 ## In-app updates
 
 Launcher settings > Check for updates looks at this repository's latest GitHub Release. If it is
-newer than the installed version, it downloads the APK and opens Android's installer, which asks
-you to confirm. The first time, Android also asks you to allow Lite Launcher to install apps.
+newer than the installed version, it downloads the APK and hands it to Android's installer, which
+asks you to confirm. The first time, Android also asks you to allow Lite Launcher to install apps.
 
 This works out of the box when the repository is **public**. While it is **private**, GitHub
 refuses anonymous requests, so the app needs a read-only token built in:
@@ -149,6 +149,17 @@ If a file is missing from the browser, choose "Can't see your files?" to grant a
 
 Video plays muted and looped, and only while the launcher is on screen. MP4 (H.264) is the
 safest format; very large 4K files may stutter.
+
+## If the helper will not switch on
+
+Android blocks accessibility services for apps it considers installed from a loose file
+("restricted settings"). The switch then flips straight back to off. Versions up to 1.5 could
+trigger this when updating themselves. Fixes, easiest first:
+
+1. Install the same or a newer APK again through a file manager or file-transfer app, then
+   switch the helper on.
+2. On the TV, open Settings > Apps > Lite Launcher and look for "Allow restricted settings".
+3. With ADB: `adb shell appops set com.litelauncher.tv ACCESS_RESTRICTED_SETTINGS allow`
 
 ## Wallpaper-only mode
 

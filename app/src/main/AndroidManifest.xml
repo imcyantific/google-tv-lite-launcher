@@ -69,15 +69,10 @@
             </intent-filter>
         </activity>
 
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.files"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
+<!-- Hears back from Android's installer during an in-app update. -->
+        <receiver
+            android:name=".UpdateReceiver"
+            android:exported="false" />
 
         <!-- Optional: catches the remote's Home button and opens this launcher.
              Off until you enable it (see README). It only reads key presses. -->

@@ -1,9 +1,12 @@
 package com.litelauncher.tv.data
 
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import androidx.core.content.FileProvider
+import android.content.pm.PackageInstaller
+import android.os.Build
 import com.litelauncher.tv.BuildConfig
+import com.litelauncher.tv.UpdateReceiver
 import org.json.JSONObject
 import java.io.File
 import java.net.HttpURLConnection
@@ -97,13 +100,34 @@ object Updater {
         return target
     }
 
-    /** Hands the APK to Android's installer, which asks the user to confirm. */
+    /**
+     * Hands the APK to Android's installer, which asks the user to confirm.
+     *
+     * This uses an installer session rather than "open this APK file". Android treats apps
+     * installed from a loose file as untrusted and then refuses to let them be switched on
+     * as an accessibility service, which would break the Home button helper after an update.
+     */
     fun install(context: Context, apk: File) {
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", apk)
-        val intent = Intent(Intent.ACTION_VIEW)
-            .setDataAndType(uri, "application/vnd.android.package-archive")
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(intent)
+        val installer = context.packageManager.packageInstaller
+        val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+        params.setAppPackageName(context.packageName)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            params.setPackageSource(PackageInstaller.PACKAGE_SOURCE_OTHER)
+        }
+        val sessionId = installer.createSession(params)
+        installer.openSession(sessionId).use { session ->
+            session.openWrite("base.apk", 0, apk.length()).use { output ->
+                apk.inputStream().use { it.copyTo(output) }
+                session.fsync(output)
+            }
+            val callback = PendingIntent.getBroadcast(
+                context,
+                sessionId,
+                Intent(context, UpdateReceiver::class.java),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+            )
+            session.commit(callback.intentSender)
+        }
     }
 
     private fun open(url: String, accept: String): HttpURLConnection {

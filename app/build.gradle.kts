@@ -15,8 +15,8 @@ android {
         minSdk = 26
         targetSdk = 35
         // The release workflow passes these in; the defaults are for local builds.
-        versionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 5
-        versionName = (findProperty("appVersionName") as String?) ?: "1.5"
+        versionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 6
+        versionName = (findProperty("appVersionName") as String?) ?: "1.6"
 
         // Where "Check for updates" looks. The token is only needed while the repository
         // is private; it is empty unless the release workflow supplies one.
@@ -52,6 +52,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -71,4 +77,8 @@ dependencies {
     implementation("androidx.tv:tv-material:1.1.0")
     implementation("androidx.activity:activity-compose:1.12.4")
     implementation("androidx.core:core-ktx:1.17.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.16")
+    testImplementation("androidx.test:core:1.6.1")
 }
