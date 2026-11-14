@@ -1,18 +1,11 @@
 package com.litelauncher.tv.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalView
 import androidx.tv.material3.LocalContentColor
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.darkColorScheme
@@ -20,7 +13,6 @@ import com.litelauncher.tv.LauncherViewModel
 import com.litelauncher.tv.Screen
 import com.litelauncher.tv.data.AppEntry
 import com.litelauncher.tv.data.AppRepository
-import kotlinx.coroutines.delay
 
 @Composable
 fun LauncherApp(vm: LauncherViewModel) {
@@ -30,38 +22,13 @@ fun LauncherApp(vm: LauncherViewModel) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
             Box(Modifier.fillMaxSize()) {
                 Wallpaper(vm)
-                IdleWatcher(vm)
-                AnimatedVisibility(visible = !vm.ambient, enter = fadeIn(tween(300)), exit = fadeOut(tween(800))) {
-                    when (vm.screen) {
-                        Screen.Home -> HomeScreen(vm, accent)
-                        Screen.AllApps -> AllAppsScreen(vm, accent)
-                        Screen.Settings -> SettingsScreen(vm, accent)
-                    }
+                when (vm.screen) {
+                    Screen.Home -> HomeScreen(vm, accent)
+                    Screen.AllApps -> AllAppsScreen(vm, accent)
+                    Screen.Settings -> SettingsScreen(vm, accent)
                 }
             }
         }
-    }
-}
-
-/**
- * Wallpaper-only mode. With the option on, the screen is kept awake while the launcher is in
- * front (so the TV's own screensaver and sleep timer don't start), and after the chosen idle
- * time on the home screen everything except the wallpaper fades out.
- */
-@Composable
-private fun IdleWatcher(vm: LauncherViewModel) {
-    val seconds = vm.settings.idleHideSeconds
-    val view = LocalView.current
-
-    DisposableEffect(seconds > 0) {
-        view.keepScreenOn = seconds > 0
-        onDispose { view.keepScreenOn = false }
-    }
-
-    LaunchedEffect(seconds, vm.activityTick, vm.screen, vm.active) {
-        if (seconds <= 0 || !vm.active || vm.screen != Screen.Home) return@LaunchedEffect
-        delay(seconds * 1000L)
-        vm.enterAmbient()
     }
 }
 
