@@ -6,6 +6,7 @@ import android.media.MediaPlayer
 import android.view.Surface
 import android.view.TextureView
 import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -41,6 +42,8 @@ import java.io.File
 fun Wallpaper(vm: LauncherViewModel) {
     val settings = vm.settings
     val preset = WallpaperPresets.getOrElse(settings.wallpaper) { WallpaperPresets.first() }
+    // The darkening layers exist to keep text readable; in wallpaper-only mode they fade away.
+    val shade by animateFloatAsState(if (vm.ambient) 0f else 1f, tween(800), label = "shade")
 
     // The gradient is always underneath, so there is something to show while media loads.
     Box(
@@ -75,7 +78,7 @@ fun Wallpaper(vm: LauncherViewModel) {
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.25f)),
+                .background(Color.Black.copy(alpha = 0.25f * shade)),
         )
     }
     // Darkens the lower half so tiles and labels stay readable on any wallpaper.
@@ -86,7 +89,7 @@ fun Wallpaper(vm: LauncherViewModel) {
                 Brush.verticalGradient(
                     0f to Color.Transparent,
                     0.45f to Color.Transparent,
-                    1f to Color.Black.copy(alpha = 0.65f),
+                    1f to Color.Black.copy(alpha = 0.65f * shade),
                 ),
             ),
     )

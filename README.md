@@ -150,6 +150,42 @@ If a file is missing from the browser, choose "Can't see your files?" to grant a
 Video plays muted and looped, and only while the launcher is on screen. MP4 (H.264) is the
 safest format; very large 4K files may stutter.
 
+## If the helper will not switch on
+
+Android blocks accessibility services for apps it considers installed from a loose file
+("restricted settings"). The switch then flips straight back to off. Versions up to 1.5 could
+trigger this when updating themselves. Fixes, easiest first:
+
+1. Install the same or a newer APK again through a file manager or file-transfer app, then
+   switch the helper on.
+2. On the TV, open Settings > Apps > Lite Launcher and look for "Allow restricted settings".
+3. With ADB: `adb shell appops set com.litelauncher.tv ACCESS_RESTRICTED_SETTINGS allow`
+
+## Wallpaper-only mode
+
+Launcher settings > "Wallpaper only when idle" (off, 30 seconds, 1, 5 or 10 minutes). After that
+long without a button press on the home screen, the clock, apps and icons fade out and only the
+wallpaper, slideshow or video stays. Any button brings everything back.
+
+While the option is on, the launcher keeps the screen awake whenever it is in front, so the TV's
+own screensaver and sleep timer do not start. Inside other apps nothing changes. On an OLED
+screen, prefer a slideshow or video over one still image to avoid burn-in.
+
+## If the helper will not switch on
+
+Symptom: you turn on "Lite Launcher Home button", confirm, and the switch is off again.
+
+Android blocks accessibility services for apps it considers installed from a loose file
+("restricted settings"). Versions 1.4 and 1.5 triggered this when they installed their own
+update. From 1.6 the updater installs through an installer session, which does not.
+
+Fixes, easiest first:
+
+1. Install the newest APK over the top through your file manager, then try the switch again.
+2. If it still flips off, uninstall Lite Launcher and install the APK fresh. This clears the
+   block but also resets the launcher's settings.
+3. With ADB: `adb shell appops set com.litelauncher.tv ACCESS_RESTRICTED_SETTINGS allow`
+
 ## Where to customise the code
 
 | What | File |

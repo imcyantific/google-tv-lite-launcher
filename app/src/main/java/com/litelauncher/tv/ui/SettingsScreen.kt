@@ -39,6 +39,8 @@ import com.litelauncher.tv.data.WALLPAPER_VIDEO
 
 private enum class SettingsDialog { None, Accent, Wallpaper, TileSize, Hidden }
 
+private val IdleTimes = listOf(0 to "Off", 30 to "After 30 seconds", 60 to "After 1 minute", 300 to "After 5 minutes", 600 to "After 10 minutes")
+
 private val SlideSpeeds = listOf(10 to "10 seconds", 30 to "30 seconds", 60 to "1 minute", 300 to "5 minutes")
 
 @Composable
@@ -98,6 +100,11 @@ fun SettingsScreen(vm: LauncherViewModel, accent: Color) {
         MenuOption("Slideshow speed", SlideSpeeds[speedIndex].second) {
             val next = SlideSpeeds[(speedIndex + 1) % SlideSpeeds.size].first
             vm.update { it.copy(slideSeconds = next) }
+        },
+        MenuOption("Wallpaper only when idle", IdleTimes.firstOrNull { it.first == settings.idleHideSeconds }?.second ?: "Off") {
+            val index = IdleTimes.indexOfFirst { it.first == settings.idleHideSeconds }.coerceAtLeast(0)
+            val next = IdleTimes[(index + 1) % IdleTimes.size].first
+            vm.update { it.copy(idleHideSeconds = next) }
         },
         MenuOption("Tile size", tileSizeName(settings.tileWidth)) { dialog = SettingsDialog.TileSize },
         MenuOption("App names under tiles", if (settings.showLabels) "On" else "Off") {

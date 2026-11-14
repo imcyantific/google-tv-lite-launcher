@@ -52,6 +52,23 @@ class LauncherViewModel(app: Application) : AndroidViewModel(app) {
     var appsLoaded by mutableStateOf(false)
         private set
 
+    /** Wallpaper-only mode: clock, apps and icons are hidden until a button is pressed. */
+    var ambient by mutableStateOf(false)
+        private set
+
+    /** Changes on every button press; restarts the idle countdown. */
+    var activityTick by mutableIntStateOf(0)
+        private set
+
+    fun onUserActivity() {
+        activityTick++
+        ambient = false
+    }
+
+    fun enterAmbient() {
+        ambient = true
+    }
+
     /** True while the launcher is on screen; slideshow and video only run then. */
     var active by mutableStateOf(false)
     var settings by mutableStateOf(prefs.load())
