@@ -15,8 +15,8 @@ android {
         minSdk = 26
         targetSdk = 35
         // The release workflow passes these in; the defaults are for local builds.
-        versionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 6
-        versionName = (findProperty("appVersionName") as String?) ?: "1.6"
+        versionCode = (findProperty("appVersionCode") as String?)?.toInt() ?: 7
+        versionName = (findProperty("appVersionName") as String?) ?: "1.7"
 
         // Where "Check for updates" looks. The token is only needed while the repository
         // is private; it is empty unless the release workflow supplies one.

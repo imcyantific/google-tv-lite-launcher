@@ -122,7 +122,14 @@ fun HomeScreen(vm: LauncherViewModel, accent: Color) {
             }
 
             fun tileModifier(index: Int): Modifier {
-                val base = Modifier.onFocusChanged { if (it.isFocused) onTileFocused(index) }
+                val base = Modifier
+                    .onFocusChanged { if (it.isFocused) onTileFocused(index) }
+                    // The row is a dead end at both ends: holding Left or Right stops on the
+                    // first or last tile instead of jumping up to the settings gear.
+                    .focusProperties {
+                        if (index == 0) left = FocusRequester.Cancel
+                        if (index == total - 1) right = FocusRequester.Cancel
+                    }
                 return if (index == focusedIndex) base.focusRequester(currentTile) else base
             }
 
